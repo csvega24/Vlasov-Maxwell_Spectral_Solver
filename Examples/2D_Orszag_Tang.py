@@ -8,7 +8,7 @@ from jax import block_until_ready
 import jax.numpy as jnp
 from spectrax import simulation, load_parameters, plot, initialize_xv
 import matplotlib.pyplot as plt
-from jax.numpy.fft import ifftn, ifftshift
+from jax.numpy.fft import ifftn
 from matplotlib.animation import FuncAnimation, PillowWriter
 
 # Read from input.toml
@@ -22,7 +22,7 @@ deltaB = 0.2 # In-plane magnetic field amplitude.
 U0 = deltaB * input_parameters["Omega_cs"][0] / jnp.sqrt(input_parameters["mi_me"])
 kx = 2 * jnp.pi / input_parameters["Lx"]
 ky = 2 * jnp.pi / input_parameters["Ly"]
-Nv = 125 
+Nv = 55 
 nvxyz = 40 # Number of velocity points in each dimension for the velocity grid.
 max_min_v_factor = 5 # Factor for the maximum and minimum velocity in each dimension.
 
@@ -65,7 +65,7 @@ Nm = solver_parameters["Nm"]
 Np = solver_parameters["Np"]
 Ck = output["Ck"]
 
-C = ifftn(ifftshift(Ck, axes=(-3, -2, -1)), axes=(-3, -2, -1)).real
+C = ifftn(Ck, axes=(-3, -2, -1)).real
 
 ne = alpha_s[0] * alpha_s[1] * alpha_s[2] * C[:, 0, :, :, 0]
 ni = alpha_s[3] * alpha_s[4] * alpha_s[5] * C[:, Nn * Nm * Np, :, :, 0]
@@ -151,7 +151,7 @@ anim = FuncAnimation(
 )
 
 # Save the animation as a GIF
-anim.save("/Users/csvega/Desktop/Madison/Code/Simulations/Orszag_Tang/S4/Jz.gif", writer=PillowWriter(fps=5))
+anim.save("Jz.gif", writer=PillowWriter(fps=5))
 
 # Display the animation
 plt.show()

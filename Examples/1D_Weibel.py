@@ -7,7 +7,7 @@ from time import time
 import jax.numpy as jnp
 from jax import block_until_ready
 from spectrax import simulation, load_parameters, plot
-from jax.numpy.fft import ifftn, ifftshift
+from jax.numpy.fft import ifftn
 import matplotlib.pyplot as plt
 
 # Read from input.toml
@@ -25,18 +25,24 @@ nx = input_parameters["nx"]
 Lx = input_parameters["Lx"]
 Omega_cs = input_parameters["Omega_cs"]
 
+def k_to_idx(k: int, N: int) -> int:
+    # map integer Fourier mode k to unshifted fft index in [0, N-1]
+    return k % N
+
 # Fourier components of magnetic and electric fields.
 Fk_0 = jnp.zeros((6, 1, Nx, 1), dtype=jnp.complex128)
-Fk_0 = Fk_0.at[2, 0, int((Nx-1)/2-nx), 0].set(dE / 2)
-Fk_0 = Fk_0.at[2, 0, int((Nx-1)/2+nx), 0].set(dE / 2)
+pos = k_to_idx(nx, Nx)      # = nx if nx>0 else 0
+neg = k_to_idx(-nx, Nx)     # = Nx-nx if nx>0 else 0
+Fk_0 = Fk_0.at[2, 0, pos, 0].set(dE / 2)
+Fk_0 = Fk_0.at[2, 0, neg, 0].set(dE / 2)
 input_parameters["Fk_0"] = Fk_0
 
 # Hermite-Fourier components of electron and ion distribution functions.
 C10_0 = 1 / (alpha_s[0] * alpha_s[1] * alpha_s[2]) + 0 * 1j
 C20_0 = 1 / (alpha_s[3] * alpha_s[4] * alpha_s[5]) + 0 * 1j
 Ck_0 = jnp.zeros((2 * Nn * Nm * Np, 1, Nx, 1), dtype=jnp.complex128)
-Ck_0 = Ck_0.at[0, 0, int((Nx-1)/2), 0].set(C10_0)
-Ck_0 = Ck_0.at[Nn * Nm * Np, 0, int((Nx-1)/2), 0].set(C20_0)
+Ck_0 = Ck_0.at[0,             0, 0, 0].set(C10_0)  # k=0 → index 0
+Ck_0 = Ck_0.at[Nn*Nm*Np,      0, 0, 0].set(C20_0)  # k=0 → index 0
 input_parameters["Ck_0"] = Ck_0
 
 # Simulate
@@ -56,7 +62,7 @@ nu = output["nu"]
 uz = output["u_s"][2]
 
 
-F = ifftn(ifftshift(Fk, axes=(-3, -2, -1)), axes=(-3, -2, -1)).real
+F = ifftn(Fk, axes=(-3, -2, -1)).real
 
 # p = jnp.polyfit(t[800:], jnp.log(jnp.sum(jnp.abs(Fk[800:,4,...]) ** 2, axis=(-1,-2,-3))), 1)
 # print(p[0])

@@ -2,7 +2,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import vmap, jit
-from jax.numpy.fft import fftn, fftshift
+from jax.numpy.fft import fftn
 from jax.scipy.special import factorial
 from jax.scipy.integrate import trapezoid
 from functools import partial
@@ -119,8 +119,8 @@ def initialize_xv(B, E, f1, f2, Nv=55, nvxyz=40, max_min_v_factor=5, input_param
     C2_0 = sharded_C20_fun(indices_sharded)
 
     # Combine Ce_0 and Ci_0 into single array and compute the fast Fourier transform.
-    C1k_0 = fftshift(fftn(C1_0, axes=(-3, -2, -1)), axes=(-3, -2, -1))
-    C2k_0 = fftshift(fftn(C2_0, axes=(-3, -2, -1)), axes=(-3, -2, -1))
+    C1k_0 = fftn(C1_0, axes=(-3, -2, -1))
+    C2k_0 = fftn(C2_0, axes=(-3, -2, -1))
     Ck_0 = jnp.concatenate([C1k_0, C2k_0])
     
     # Define 3D grid for functions E(x, y, z) and B(x, y, z).
@@ -130,8 +130,8 @@ def initialize_xv(B, E, f1, f2, Nv=55, nvxyz=40, max_min_v_factor=5, input_param
     X, Y, Z = jnp.meshgrid(x, y, z, indexing='xy')
     
     # Combine E and B into single array and compute the fast Fourier transform.
-    Ek_0 = fftshift(fftn(E(X, Y, Z), axes=(-3, -2, -1)), axes=(-3, -2, -1))
-    Bk_0 = fftshift(fftn(B(X, Y, Z), axes=(-3, -2, -1)), axes=(-3, -2, -1))
+    Ek_0 = fftn(E(X, Y, Z), axes=(-3, -2, -1))
+    Bk_0 = fftn(B(X, Y, Z), axes=(-3, -2, -1))
     Fk_0 = jnp.concatenate([Ek_0, Bk_0])
     
     return Ck_0, Fk_0
